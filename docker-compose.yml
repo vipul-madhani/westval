@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: westval-postgres
+    environment:
+      POSTGRES_DB: westval
+      POSTGRES_USER: westval_user
+      POSTGRES_PASSWORD: westval_pass_2025
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - westval-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: westval-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - westval-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: westval-backend
+    environment:
+      DATABASE_URL: postgresql://westval_user:westval_pass_2025@postgres:5432/westval
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      FLASK_ENV: ${FLASK_ENV:-development}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+    networks:
+      - westval-network
+    command: python run.py
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: westval-frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:5000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - westval-network
+
+volumes:
+  postgres_data:
+
+networks:
+  westval-network:
+    driver: bridge
