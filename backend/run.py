@@ -2,8 +2,10 @@
 from app import create_app, db, socketio
 from app.models.user import User, Role
 from app.services.workflow_service import WorkflowService
+from app.services.demo_data_service import DemoDataService
 from datetime import datetime
 import uuid
+import click
 
 app = create_app()
 
@@ -53,6 +55,11 @@ def init_db():
     WorkflowService.create_default_workflows()
     
     print('Database initialized successfully!')
+
+@app.cli.command()
+def init_demo():
+    """Initialize demo data for presentations"""
+    DemoDataService.initialize_demo_data()
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
