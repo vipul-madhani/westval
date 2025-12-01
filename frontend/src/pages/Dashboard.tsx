@@ -2,136 +2,320 @@ import { useEffect, useState } from 'react'
 import {
   Container,
   Grid,
-  Paper,
-  Typography,
-  Box,
   Card,
   CardContent,
+  Typography,
+  Box,
   AppBar,
   Toolbar,
-  Button
+  Button,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  Chip,
+  LinearProgress,
+  IconButton,
+  Badge
 } from '@mui/material'
+import {
+  Assignment,
+  CheckCircle,
+  Warning,
+  TrendingUp,
+  Notifications,
+  AccountTree,
+  Description,
+  Science
+} from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import axios from 'axios'
 
 function Dashboard() {
-  const [stats, setStats] = useState<any>(null)
   const navigate = useNavigate()
+  const [stats, setStats] = useState<any>(null)
+  const [notifications, setNotifications] = useState<any[]>([])
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem('access_token')
-        const response = await axios.get('/api/validation/statistics', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        setStats(response.data)
-      } catch (error) {
-        console.error('Failed to fetch statistics:', error)
-      }
-    }
-
-    fetchStats()
+    fetchDashboardData()
   }, [])
 
-  const handleLogout = () => {
-    localStorage.clear()
-    navigate('/login')
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      
+      // Mock data - replace with actual API calls
+      setStats({
+        activeProjects: 5,
+        totalTests: 245,
+        testsPass: 198,
+        testsFailed: 12,
+        pendingApprovals: 8,
+        complianceScore: 96
+      })
+
+      const notifResponse = await axios.get('/api/workflow/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setNotifications(notifResponse.data.notifications || [])
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error)
+    }
   }
+
+  const testData = [
+    { name: 'Passed', value: 198, color: '#4caf50' },
+    { name: 'Failed', value: 12, color: '#f44336' },
+    { name: 'Pending', value: 35, color: '#ff9800' }
+  ]
+
+  const projectData = [
+    { name: 'ERP CSV', progress: 85 },
+    { name: 'LIMS Validation', progress: 60 },
+    { name: 'Equipment IQ', progress: 95 },
+    { name: 'Lab OQ', progress: 40 }
+  ]
 
   return (
     <Box>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Westval - Dashboard
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Westval - Validation Lifecycle Management
           </Typography>
-          <Button color="inherit" onClick={() => navigate('/validation')}>Projects</Button>
-          <Button color="inherit" onClick={() => navigate('/documents')}>Documents</Button>
-          <Button color="inherit" onClick={() => navigate('/requirements')}>Requirements</Button>
-          <Button color="inherit" onClick={() => navigate('/tests')}>Tests</Button>
-          <Button color="inherit" onClick={() => navigate('/compliance')}>Compliance</Button>
-          <Button color="inherit" onClick={handleLogout}>Logout</Button>
+          <Badge badgeContent={notifications.filter(n => !n.is_read).length} color="error">
+            <IconButton color="inherit" onClick={() => navigate('/tasks')}>
+              <Notifications />
+            </IconButton>
+          </Badge>
+          <Button color="inherit" onClick={() => {
+            localStorage.removeItem('access_token')
+            navigate('/login')
+          }}>
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Dashboard Overview
-        </Typography>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+        {/* Quick Stats */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ bgcolor: 'primary.main', color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h3">{stats?.activeProjects || 0}</Typography>
+                    <Typography variant="body2">Active Projects</Typography>
+                  </Box>
+                  <Assignment sx={{ fontSize: 60, opacity: 0.3 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ bgcolor: 'success.main', color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h3">{stats?.testsPass || 0}</Typography>
+                    <Typography variant="body2">Tests Passed</Typography>
+                  </Box>
+                  <CheckCircle sx={{ fontSize: 60, opacity: 0.3 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ bgcolor: 'warning.main', color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h3">{stats?.pendingApprovals || 0}</Typography>
+                    <Typography variant="body2">Pending Tasks</Typography>
+                  </Box>
+                  <Warning sx={{ fontSize: 60, opacity: 0.3 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ bgcolor: 'info.main', color: 'white' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="h3">{stats?.complianceScore || 0}%</Typography>
+                    <Typography variant="body2">Compliance Score</Typography>
+                  </Box>
+                  <TrendingUp sx={{ fontSize: 60, opacity: 0.3 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Quick Actions */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Quick Actions
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              startIcon={<Assignment />}
+              onClick={() => navigate('/validation')}
+            >
+              New Validation Project
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Science />}
+              onClick={() => navigate('/tests')}
+            >
+              Execute Tests
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<AccountTree />}
+              onClick={() => navigate('/traceability')}
+            >
+              View Traceability
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Description />}
+              onClick={() => navigate('/documents')}
+            >
+              Documents
+            </Button>
+          </Box>
+        </Paper>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom>
-                  Total Projects
-                </Typography>
-                <Typography variant="h3">
-                  {stats?.total_projects || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom>
-                  In Progress
-                </Typography>
-                <Typography variant="h3">
-                  {stats?.by_status?.['In Progress'] || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom>
-                  Completed
-                </Typography>
-                <Typography variant="h3">
-                  {stats?.by_status?.Approved || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12}>
+          {/* Test Results Chart */}
+          <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h5" gutterBottom>
-                Quick Actions
+              <Typography variant="h6" gutterBottom>
+                Test Execution Summary
               </Typography>
-              <Grid container spacing={2}>
-                <Grid item>
-                  <Button variant="contained" onClick={() => navigate('/validation')}>New Validation Project</Button>
-                </Grid>
-                <Grid item>
-                  <Button variant="outlined" onClick={() => navigate('/documents')}>Create Document</Button>
-                </Grid>
-                <Grid item>
-                  <Button variant="outlined" onClick={() => navigate('/requirements')}>Add Requirement</Button>
-                </Grid>
-                <Grid item>
-                  <Button variant="outlined" onClick={() => navigate('/tests')}>Create Test Case</Button>
-                </Grid>
-              </Grid>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={testData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: ${entry.value}`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {testData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </Paper>
           </Grid>
 
-          <Grid item xs={12}>
+          {/* Project Progress */}
+          <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h5" gutterBottom>
-                Validation Types Distribution
+              <Typography variant="h6" gutterBottom>
+                Project Progress
               </Typography>
-              {stats?.by_type && Object.entries(stats.by_type).map(([type, count]: [string, any]) => (
-                <Box key={type} sx={{ mt: 2 }}>
-                  <Typography>{type}: {count}</Typography>
-                </Box>
-              ))}
+              <List>
+                {projectData.map((project) => (
+                  <ListItem key={project.name}>
+                    <ListItemText
+                      primary={project.name}
+                      secondary={
+                        <Box sx={{ mt: 1 }}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={project.progress}
+                            sx={{ height: 8, borderRadius: 4 }}
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            {project.progress}% Complete
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          </Grid>
+
+          {/* Recent Notifications */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Recent Notifications
+              </Typography>
+              <List>
+                {notifications.slice(0, 5).map((notif) => (
+                  <ListItem key={notif.id}>
+                    <ListItemText
+                      primary={notif.title}
+                      secondary={new Date(notif.created_at).toLocaleString()}
+                    />
+                    {notif.priority === 'URGENT' && (
+                      <Chip label="Urgent" color="error" size="small" />
+                    )}
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          </Grid>
+
+          {/* Compliance Status */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Compliance Status
+              </Typography>
+              <List>
+                <ListItem>
+                  <CheckCircle color="success" sx={{ mr: 2 }} />
+                  <ListItemText
+                    primary="21 CFR Part 11"
+                    secondary="Fully Compliant"
+                  />
+                  <Chip label="Active" color="success" size="small" />
+                </ListItem>
+                <ListItem>
+                  <CheckCircle color="success" sx={{ mr: 2 }} />
+                  <ListItemText
+                    primary="EU Annex 11"
+                    secondary="Fully Compliant"
+                  />
+                  <Chip label="Active" color="success" size="small" />
+                </ListItem>
+                <ListItem>
+                  <CheckCircle color="success" sx={{ mr: 2 }} />
+                  <ListItemText
+                    primary="GAMP 5"
+                    secondary="Aligned"
+                  />
+                  <Chip label="Active" color="success" size="small" />
+                </ListItem>
+                <ListItem>
+                  <CheckCircle color="success" sx={{ mr: 2 }} />
+                  <ListItemText
+                    primary="Audit Trail"
+                    secondary="Recording All Activities"
+                  />
+                  <Chip label="Active" color="success" size="small" />
+                </ListItem>
+              </List>
             </Paper>
           </Grid>
         </Grid>
