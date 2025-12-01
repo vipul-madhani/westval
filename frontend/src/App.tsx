@@ -11,6 +11,7 @@ import TestExecution from './pages/TestExecution'
 import RiskAssessment from './pages/RiskAssessment'
 import Compliance from './pages/Compliance'
 import TaskInbox from './pages/TaskInbox'
+import TraceabilityPage from './pages/TraceabilityPage'
 
 const theme = createTheme({
   palette: {
@@ -37,6 +38,7 @@ function App() {
           <Route path="/tests" element={<TestManagement />} />
           <Route path="/tests/execute/:testCaseId" element={<TestExecution />} />
           <Route path="/tasks" element={<TaskInbox />} />
+          <Route path="/traceability" element={<TraceabilityPage />} />
           <Route path="/risk" element={<RiskAssessment />} />
           <Route path="/compliance" element={<Compliance />} />
         </Routes>
