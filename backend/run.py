@@ -1,6 +1,8 @@
 """Application entry point"""
 from app import create_app, db, socketio
 from app.models.user import User, Role
+from app.services.workflow_service import WorkflowService
+from datetime import datetime
 import uuid
 
 app = create_app()
@@ -45,6 +47,11 @@ def init_db():
         db.session.add(admin)
     
     db.session.commit()
+    
+    # Create workflow definitions
+    print('Creating workflow definitions...')
+    WorkflowService.create_default_workflows()
+    
     print('Database initialized successfully!')
 
 if __name__ == '__main__':
