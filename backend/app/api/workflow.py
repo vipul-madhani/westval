@@ -154,3 +154,130 @@ def start_workflow():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# PHASE 2: ADVANCED WORKFLOW ENGINE ENDPOINTS
+# ============================================================================
+
+@workflow_bp.route('/templates', methods=['GET'])
+@jwt_required()
+def get_workflow_templates():
+    """Get all workflow templates for organization"""
+    user_id = get_jwt_identity()
+    templates = db.session.query(WorkflowTemplate).all()
+    return jsonify({'templates': [{'id': t.id, 'name': t.name, 'description': t.description} for t in templates]}), 200
+
+@workflow_bp.route('/templates', methods=['POST'])
+@jwt_required()
+def create_workflow_template():
+    """Create new workflow template"""
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    result = WorkflowService.create_workflow_template(
+        name=data.get('name'),
+        description=data.get('description'),
+        organization_id=data.get('organization_id'),
+        user_id=user_id
+    )
+    return jsonify(result), 201
+
+@workflow_bp.route('/templates/<template_id>/states', methods=['POST'])
+@jwt_required()
+def add_workflow_state(template_id):
+    """Add state to workflow template"""
+    data = request.get_json()
+    result = WorkflowService.add_state_to_workflow(
+        template_id=template_id,
+        name=data.get('name'),
+        order=data.get('order'),
+        is_initial=data.get('is_initial', False)
+    )
+    return jsonify(result), 201
+
+@workflow_bp.route('/templates/<template_id>/transitions', methods=['POST'])
+@jwt_required()
+def add_workflow_transition(template_id):
+    """Add transition between states"""
+    data = request.get_json()
+    result = WorkflowService.add_transition(
+        template_id=template_id,
+        from_state_id=data.get('from_state_id'),
+        to_state_id=data.get('to_state_id'),
+        name=data.get('name')
+    )
+    return jsonify(result), 201
+
+@workflow_bp.route('/documents/<document_id>/transition', methods=['POST'])
+@jwt_required()
+def execute_state_transition(document_id):
+    """Execute workflow state transition with full validation"""
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json()
+    
+    doc_state = DocumentWorkflowState.query.filter_by(document_id=document_id).first()
+    if not doc_state:
+        return jsonify({'error': 'Document not in workflow'}), 404
+    
+    fsm = WorkflowStateMachine(doc_state.current_state.template_id)
+    result = fsm.execute_transition(
+        document_id=document_id,
+        to_state_id=data.get('to_state_id'),
+        user=user,
+        reason=data.get('reason', ''),
+        ip_address=request.remote_addr,
+        user_agent=request.headers.get('User-Agent')
+    )
+    
+    status_code = 200 if result.get('success') else 400
+    return jsonify(result), status_code
+
+@workflow_bp.route('/documents/<document_id>/approvals', methods=['POST'])
+@jwt_required()
+def add_approval_signature(document_id):
+    """Add approval signature (parallel approvals)"""
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json()
+    
+    doc_state = DocumentWorkflowState.query.filter_by(document_id=document_id).first()
+    if not doc_state:
+        return jsonify({'error': 'Document not in workflow'}), 404
+    
+    fsm = WorkflowStateMachine(doc_state.current_state.template_id)
+    result = fsm.add_approval_signature(
+        document_id=document_id,
+        user=user,
+        signature=data.get('signature')
+    )
+    
+    status_code = 200 if result.get('success') else 400
+    return jsonify(result), status_code
+
+@workflow_bp.route('/documents/<document_id>/audit-trail', methods=['GET'])
+@jwt_required()
+def get_workflow_audit_trail(document_id):
+    """Get immutable audit trail for document (21 CFR Part 11)"""
+    doc_state = DocumentWorkflowState.query.filter_by(document_id=document_id).first()
+    if not doc_state:
+        return jsonify({'error': 'Document not found'}), 404
+    
+    fsm = WorkflowStateMachine(doc_state.current_state.template_id)
+    audit_trail = fsm.get_audit_trail(document_id)
+    
+    return jsonify({'audit_trail': audit_trail}), 200
+
+@workflow_bp.route('/documents/<document_id>/valid-transitions', methods=['GET'])
+@jwt_required()
+def get_valid_transitions(document_id):
+    """Get valid transitions from current state"""
+    doc_state = DocumentWorkflowState.query.filter_by(document_id=document_id).first()
+    if not doc_state:
+        return jsonify({'error': 'Document not found'}), 404
+    
+    fsm = WorkflowStateMachine(doc_state.current_state.template_id)
+    transitions = fsm.get_valid_transitions(doc_state.current_state_id)
+    
+    return jsonify({'transitions': transitions}), 200
