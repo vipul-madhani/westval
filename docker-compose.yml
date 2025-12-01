@@ -1,51 +1,67 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15
-    container_name: westval-postgres
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: westval_mysql
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: westval
-      POSTGRES_USER: westval_user
-      POSTGRES_PASSWORD: westval_pass_2025
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-westval_root_pass_2025}
+      MYSQL_DATABASE: ${DB_NAME:-westval}
+      MYSQL_USER: ${DB_USER:-westval_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-westval_secure_password_2025}
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
-      - westval-network
+      - westval_network
 
-  # Redis Cache
+  # Redis for caching and task queue
   redis:
     image: redis:7-alpine
-    container_name: westval-redis
+    container_name: westval_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
-      - westval-network
+      - westval_network
 
   # Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: westval-backend
+    container_name: westval_backend
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://westval_user:westval_pass_2025@postgres:5432/westval
-      REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
       FLASK_ENV: ${FLASK_ENV:-development}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DB_TYPE: ${DB_TYPE:-mysql}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-westval}
+      DB_USER: ${DB_USER:-westval_user}
+      DB_PASSWORD: ${DB_PASSWORD:-westval_secure_password_2025}
+      REDIS_HOST: redis
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      LDAP_ENABLED: ${LDAP_ENABLED:-false}
+      AUTH_TYPE: ${AUTH_TYPE:-local}
     ports:
       - "5000:5000"
-    depends_on:
-      - postgres
-      - redis
     volumes:
       - ./backend:/app
+      - uploads:/app/uploads
+    depends_on:
+      - mysql
+      - redis
     networks:
-      - westval-network
+      - westval_network
     command: python run.py
 
   # Frontend
@@ -53,22 +69,25 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: westval-frontend
-    environment:
-      REACT_APP_API_URL: http://localhost:5000/api
+    container_name: westval_frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    depends_on:
-      - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
     networks:
-      - westval-network
+      - westval_network
 
 volumes:
-  postgres_data:
+  mysql_data:
+  redis_data:
+  uploads:
 
 networks:
-  westval-network:
+  westval_network:
     driver: bridge
