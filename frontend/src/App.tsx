@@ -7,8 +7,10 @@ import ValidationProjects from './pages/ValidationProjects'
 import Documents from './pages/Documents'
 import Requirements from './pages/Requirements'
 import TestManagement from './pages/TestManagement'
+import TestExecution from './pages/TestExecution'
 import RiskAssessment from './pages/RiskAssessment'
 import Compliance from './pages/Compliance'
+import TaskInbox from './pages/TaskInbox'
 
 const theme = createTheme({
   palette: {
@@ -33,6 +35,8 @@ function App() {
           <Route path="/documents" element={<Documents />} />
           <Route path="/requirements" element={<Requirements />} />
           <Route path="/tests" element={<TestManagement />} />
+          <Route path="/tests/execute/:testCaseId" element={<TestExecution />} />
+          <Route path="/tasks" element={<TaskInbox />} />
           <Route path="/risk" element={<RiskAssessment />} />
           <Route path="/compliance" element={<Compliance />} />
         </Routes>
