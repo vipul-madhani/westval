@@ -1,0 +1,25 @@
+name: CI/CD Pipeline
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Run tests
+        run: cd backend && python -m pytest
+      - name: Build Docker image
+        run: docker build -t westval:latest ./backend
+      - name: Push to registry
+        run: echo "Deploy to registry"
+      - name: Deploy
+        run: echo "Deploy to production"
