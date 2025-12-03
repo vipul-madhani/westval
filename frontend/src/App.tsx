@@ -12,6 +12,7 @@ import RiskAssessment from './pages/RiskAssessment'
 import Compliance from './pages/Compliance'
 import TaskInbox from './pages/TaskInbox'
 import TraceabilityPage from './pages/TraceabilityPage'
+import MainLayout from './components/MainLayout'
 
 const theme = createTheme({
   palette: {
@@ -31,16 +32,18 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/validation" element={<ValidationProjects />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/requirements" element={<Requirements />} />
-          <Route path="/tests" element={<TestManagement />} />
-          <Route path="/tests/execute/:testCaseId" element={<TestExecution />} />
-          <Route path="/tasks" element={<TaskInbox />} />
-          <Route path="/traceability" element={<TraceabilityPage />} />
-          <Route path="/risk" element={<RiskAssessment />} />
-          <Route path="/compliance" element={<Compliance />} />
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/validation" element={<ValidationProjects />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/requirements" element={<Requirements />} />
+            <Route path="/tests" element={<TestManagement />} />
+            <Route path="/tests/execute/:testCaseId" element={<TestExecution />} />
+            <Route path="/tasks" element={<TaskInbox />} />
+            <Route path="/traceability" element={<TraceabilityPage />} />
+            <Route path="/risk" element={<RiskAssessment />} />
+            <Route path="/compliance" element={<Compliance />} />
+          </Route>
         </Routes>
       </Router>
     </ThemeProvider>

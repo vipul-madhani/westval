@@ -14,7 +14,11 @@ class User(db.Model):
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
     is_active = db.Column(db.Boolean, default=True)
+    is_locked = db.Column(db.Boolean, default=False)
     is_admin = db.Column(db.Boolean, default=False)
+    is_ldap_user = db.Column(db.Boolean, default=False)
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
     department = db.Column(db.String(100))
     job_title = db.Column(db.String(100))
     phone = db.Column(db.String(20))
@@ -29,7 +33,7 @@ class User(db.Model):
     last_login = db.Column(db.DateTime)
     
     # Relationships
-    roles = db.relationship('UserRole', back_populates='user', cascade='all, delete-orphan')
+    roles = db.relationship('UserRole', back_populates='user', foreign_keys='UserRole.user_id', cascade='all, delete-orphan')
     audit_logs = db.relationship('AuditLog', back_populates='user')
     signatures = db.relationship('ElectronicSignature', back_populates='user')
     
@@ -78,4 +82,4 @@ class UserRole(db.Model):
     assigned_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     
     user = db.relationship('User', back_populates='roles', foreign_keys=[user_id])
-    role = db.relationship('Role', back_populates='users')
+    role = db.relationship('Role', back_populates='users', foreign_keys=[role_id])

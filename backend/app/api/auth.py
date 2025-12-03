@@ -86,7 +86,7 @@ def login():
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
-                    'roles': [r.name for r in user.roles],
+                    'roles': [r.role.name for r in user.roles],
                     'auth_method': 'ldap'
                 }
             }), 200
@@ -137,7 +137,7 @@ def login():
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'roles': [r.name for r in user.roles],
+            'roles': [r.role.name for r in user.roles],
             'auth_method': 'local'
         }
     }), 200

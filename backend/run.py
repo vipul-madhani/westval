@@ -1,5 +1,6 @@
 """Application entry point"""
-from app import create_app, db, socketio
+from app import create_app
+from app.extensions import db, socketio
 from app.models.user import User, Role
 from app.services.workflow_service import WorkflowService
 from app.services.demo_data_service import DemoDataService
@@ -62,4 +63,4 @@ def init_demo():
     DemoDataService.initialize_demo_data()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5002)

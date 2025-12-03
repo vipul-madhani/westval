@@ -48,7 +48,7 @@ class Document(db.Model):
     
     # Relationships
     signatures = db.relationship('ElectronicSignature', back_populates='document')
-    audit_logs = db.relationship('AuditLog', foreign_keys='AuditLog.entity_id')
+    # audit_logs = db.relationship('AuditLog', foreign_keys='AuditLog.entity_id')  # TODO: Fix polymorphic relationship
 
 class DocumentTemplate(db.Model):
     __tablename__ = 'document_templates'

@@ -1,6 +1,10 @@
 """Application configuration management"""
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
     """Base configuration"""
@@ -17,12 +21,11 @@ class Config:
     DB_USER = os.getenv('DB_USER', 'westval_user')
     DB_PASSWORD = os.getenv('DB_PASSWORD', 'westval_pass')
     
-    @property
-    def SQLALCHEMY_DATABASE_URI(self):
-        if self.DB_TYPE == 'mysql':
-            return f'mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}?charset=utf8mb4'
-        else:
-            return f'postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
+    # Database URI
+    if DB_TYPE == 'mysql':
+        SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
+    else:
+        SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False

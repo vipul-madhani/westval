@@ -5,7 +5,7 @@ from app import db
 from app.models.user import User, Role
 from app.models.validation import ValidationProject, ValidationProtocol
 from app.models.requirement import Requirement
-from app.models.test import TestCase
+from app.models.test_management import TestCase
 from app.models.document import Document
 from app.services.workflow_service import WorkflowService
 

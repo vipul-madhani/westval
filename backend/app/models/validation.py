@@ -2,6 +2,8 @@
 from datetime import datetime
 from app import db
 import uuid
+from app.models.risk import RiskAssessment
+# from app.models.test import TestCase  # Avoid circular import if possible, or use string reference carefully
 
 class ValidationProject(db.Model):
     __tablename__ = 'validation_projects'
@@ -51,28 +53,27 @@ class ValidationProtocol(db.Model):
     
     # Protocol details
     protocol_number = db.Column(db.String(50), unique=True, nullable=False)
-    protocol_type = db.Column(db.String(50))  # VMP, IQ, OQ, PQ, VP, Summary Report
+    protocol_type = db.Column(db.String(50))  # IQ, OQ, PQ, CSV
     title = db.Column(db.String(255), nullable=False)
     version = db.Column(db.String(20), default='1.0')
     
-    # Content
-    objective = db.Column(db.Text)
-    scope = db.Column(db.Text)
-    acceptance_criteria = db.Column(db.Text)
-    
     # Status
-    status = db.Column(db.String(50), default='Draft')  # Draft, Review, Approved, Executed, Completed
+    status = db.Column(db.String(50), default='Draft')  # Draft, Under Review, Approved, Executed, Closed
     
-    # Document metadata
-    template_id = db.Column(db.String(36), db.ForeignKey('document_templates.id'))
-    file_path = db.Column(db.String(500))
+    # Approval
+    approved_by = db.Column(db.String(36), db.ForeignKey('users.id'))
+    approved_at = db.Column(db.DateTime)
     
-    # Timestamps
+    # Execution
+    executed_by = db.Column(db.String(36), db.ForeignKey('users.id'))
+    executed_at = db.Column(db.DateTime)
+    execution_summary = db.Column(db.Text)
+    
+    # Metadata
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    approved_at = db.Column(db.DateTime)
+    created_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     
     # Relationships
     project = db.relationship('ValidationProject', back_populates='protocols')
-    test_cases = db.relationship('TestCase', back_populates='protocol', cascade='all, delete-orphan')
     signatures = db.relationship('ElectronicSignature', back_populates='protocol')

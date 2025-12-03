@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.dialects.mysql import JSON
 from app import db
 import uuid
+from app.models.document import Document
 
 
 # =============================================================================
@@ -29,7 +30,7 @@ class WorkflowTemplate(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(255), nullable=False, unique=True)
     description = db.Column(db.Text)
-    organization_id = db.Column(db.String(36), db.ForeignKey('organizations.id'), nullable=False)
+    organization_id = db.Column(db.String(36), nullable=True)  # TODO: Add ForeignKey when organizations table is created
     is_active = db.Column(db.Boolean, default=True)
     created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -59,12 +60,12 @@ class WorkflowState(db.Model):
     is_final = db.Column(db.Boolean, default=False)  # Terminal state
     requires_signature = db.Column(db.Boolean, default=False)
     sla_hours = db.Column(db.Integer)  # SLA for this state
-    metadata = db.Column(JSON)
+    extra_data = db.Column(JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     outgoing_transitions = db.relationship('WorkflowTransition', foreign_keys='WorkflowTransition.from_state_id', backref='from_state')
     incoming_transitions = db.relationship('WorkflowTransition', foreign_keys='WorkflowTransition.to_state_id', backref='to_state')
-    document_states = db.relationship('DocumentWorkflowState', backref='state')
+    document_states = db.relationship('DocumentWorkflowState', foreign_keys='DocumentWorkflowState.current_state_id', backref='state')
     
     __table_args__ = (db.UniqueConstraint('template_id', 'name', name='uq_template_state_name'),)
     
@@ -123,7 +124,7 @@ class WorkflowRule(db.Model):
     
     is_blocking = db.Column(db.Boolean, default=True)  # Blocks transition if fails
     description = db.Column(db.Text)
-    metadata = db.Column(JSON)
+    extra_data = db.Column(JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
@@ -172,7 +173,7 @@ class DynamicFormConfig(db.Model):
     
     options = db.Column(JSON)  # For dropdowns
     validation_rules = db.Column(JSON)  # {min_length, max_length, pattern}
-    metadata = db.Column(JSON)
+    extra_data = db.Column(JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     __table_args__ = (db.UniqueConstraint('template_id', 'state_id', 'field_name', name='uq_form_field'),)
@@ -190,7 +191,7 @@ class DocumentWorkflowState(db.Model):
     __tablename__ = 'document_workflow_states'
     
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    document_id = db.Column(db.String(36), db.ForeignKey('validation_documents.id'), nullable=False)
+    document_id = db.Column(db.String(36), db.ForeignKey('documents.id'), nullable=False)
     current_state_id = db.Column(db.String(36), db.ForeignKey('workflow_states.id'), nullable=False)
     previous_state_id = db.Column(db.String(36), db.ForeignKey('workflow_states.id'))
     
@@ -207,10 +208,10 @@ class DocumentWorkflowState(db.Model):
     approvals_data = db.Column(JSON)  # [{user_id, role, timestamp, signature, signed_by}, ...]
     
     is_locked = db.Column(db.Boolean, default=False)
-    metadata = db.Column(JSON)
+    extra_data = db.Column(JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    document = db.relationship('ValidationDocument', backref='workflow_states')
+    document = db.relationship('Document', backref='workflow_states')
     current_state = db.relationship('WorkflowState', foreign_keys=[current_state_id])
     
     def __repr__(self):
@@ -222,7 +223,7 @@ class WorkflowAuditLog(db.Model):
     __tablename__ = 'workflow_audit_logs'
     
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    document_id = db.Column(db.String(36), db.ForeignKey('validation_documents.id'), nullable=False)
+    document_id = db.Column(db.String(36), db.ForeignKey('documents.id'), nullable=False)
     
     action = db.Column(db.String(100), nullable=False)  # state_change, approval_given, etc.
     from_state = db.Column(db.String(255))

@@ -2,7 +2,7 @@
 from datetime import datetime
 import json
 from app.models.validation import ValidationProject, ValidationProtocol
-from app.models.test import TestCase
+from app.models.test_management import TestCase
 from app.models.requirement import Requirement
 from app.models.document import Document
 

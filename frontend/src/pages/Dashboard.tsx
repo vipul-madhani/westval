@@ -6,30 +6,25 @@ import {
   CardContent,
   Typography,
   Box,
-  AppBar,
-  Toolbar,
   Button,
   Paper,
   List,
   ListItem,
   ListItemText,
   Chip,
-  LinearProgress,
-  IconButton,
-  Badge
+  LinearProgress
 } from '@mui/material'
 import {
   Assignment,
   CheckCircle,
   Warning,
   TrendingUp,
-  Notifications,
   AccountTree,
   Description,
   Science
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import axios from 'axios'
 
 function Dashboard() {
@@ -44,7 +39,7 @@ function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('access_token')
-      
+
       // Mock data - replace with actual API calls
       setStats({
         activeProjects: 5,
@@ -79,25 +74,6 @@ function Dashboard() {
 
   return (
     <Box>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Westval - Validation Lifecycle Management
-          </Typography>
-          <Badge badgeContent={notifications.filter(n => !n.is_read).length} color="error">
-            <IconButton color="inherit" onClick={() => navigate('/tasks')}>
-              <Notifications />
-            </IconButton>
-          </Badge>
-          <Button color="inherit" onClick={() => {
-            localStorage.removeItem('access_token')
-            navigate('/login')
-          }}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         {/* Quick Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>

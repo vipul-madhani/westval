@@ -39,7 +39,7 @@ class Requirement(db.Model):
     
     # Relationships
     project = db.relationship('ValidationProject', back_populates='requirements')
-    test_cases = db.relationship('TestCase', secondary='requirement_test_mapping', back_populates='requirements')
+    # test_cases = db.relationship('TestCase', secondary='requirement_test_mapping', back_populates='requirements')
 
 class RequirementTestMapping(db.Model):
     """Traceability matrix mapping"""
